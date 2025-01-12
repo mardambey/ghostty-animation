@@ -11,5 +11,6 @@
   Can be used as a basic insecure terminal lock for fun using the 'lock.py' script.
 </p>
 <p align="center">
+  
   ![Animation](animation.gif?raw=true)
 </p>
