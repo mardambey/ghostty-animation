@@ -189,8 +189,14 @@ def verify_password():
         log_attempt(False, f'error: {str(e)}')
         return False
 
-def sigint_handler(signum, frame):
-    # Ignore Ctrl+C
+def sigquit_handler(signum, frame):
+    logging.warning(f"""SIGQUIT (Ctrl+\\) attempt by {pwd.getpwuid(os.getuid()).pw_name}""")
+    # Ignore Ctrl+\\ by doing nothing
+    pass
+
+def sigtstp_handler(signum, frame):
+    logging.warning(f"SIGTSTP (Ctrl+Z) attempt by {pwd.getpwuid(os.getuid()).pw_name}")
+    # Ignore Ctrl+Z by doing nothing
     pass
 
 def render_frame(frame_content):
@@ -224,6 +230,10 @@ def play_animation():
     try:
         # Save terminal state before starting
         save_terminal_state()
+        
+        # Install signal handlers
+        signal.signal(signal.SIGTSTP, sigtstp_handler) # Ctrl+Z
+        signal.signal(signal.SIGQUIT, sigquit_handler)  # Ctrl+\ (also catch this)
         
         # Log start of session
         logging.info(f"Terminal lock started by {pwd.getpwuid(os.getuid()).pw_name}")
