@@ -71,54 +71,57 @@ def draw_password_prompt():
     horizontal = '═'
     vertical = '║'
     
-    # Clear screen
-    sys.stdout.write('\033[2J\033[H')
+    # Animation frame dimensions (from looking at the frames)
+    frame_height = 25  # Height of animation frames
+    frame_width = 100  # Width of animation frames
     
-    # Calculate vertical centering
-    v_padding = '\n' * 10
-    sys.stdout.write(v_padding)
+    # Calculate center position relative to frame dimensions
+    v_padding = (frame_height - height) // 2
+    h_offset = (frame_width - width) // 2
     
-    # Draw box
-    h_offset = (80 - width) // 2
+    # Save cursor position and hide it
+    sys.stdout.write('\033[s\033[?25l')
     
-    # Draw top
-    sys.stdout.write(' ' * h_offset)
-    sys.stdout.write(f"{top_left}{horizontal * (width-2)}{top_right}\n")
+    # Draw top with background
+    sys.stdout.write(f"\033[{v_padding};{h_offset}H")  # Move to start position
+    sys.stdout.write('\033[40m')  # Black background
+    sys.stdout.write(f"{top_left}{horizontal * (width-2)}{top_right}")
     
     # Empty line
-    sys.stdout.write(' ' * h_offset)
-    sys.stdout.write(f"{vertical}{' ' * (width-2)}{vertical}\n")
+    sys.stdout.write(f"\033[{v_padding+1};{h_offset}H")
+    sys.stdout.write(f"{vertical}{' ' * (width-2)}{vertical}")
     
     # Title line
     title = "[ Authentication Required ]"
     title_padding = (width - 2 - len(title)) // 2
-    sys.stdout.write(' ' * h_offset)
-    sys.stdout.write(f"{vertical}{' ' * title_padding}{title}{' ' * (width - 2 - title_padding - len(title))}{vertical}\n")
+    sys.stdout.write(f"\033[{v_padding+2};{h_offset}H")
+    sys.stdout.write(f"{vertical}{' ' * title_padding}{title}{' ' * (width - 2 - title_padding - len(title))}{vertical}")
     
     # Empty line
-    sys.stdout.write(' ' * h_offset)
-    sys.stdout.write(f"{vertical}{' ' * (width-2)}{vertical}\n")
+    sys.stdout.write(f"\033[{v_padding+3};{h_offset}H")
+    sys.stdout.write(f"{vertical}{' ' * (width-2)}{vertical}")
     
     # Input field line
     field = "[ " + "_" * 20 + " ]"
     field_padding = (width - 2 - len(field)) // 2
-    sys.stdout.write(' ' * h_offset)
-    sys.stdout.write(f"{vertical}{' ' * field_padding}{field}{' ' * (width - 2 - field_padding - len(field))}{vertical}\n")
+    sys.stdout.write(f"\033[{v_padding+4};{h_offset}H")
+    sys.stdout.write(f"{vertical}{' ' * field_padding}{field}{' ' * (width - 2 - field_padding - len(field))}{vertical}")
     
     # Empty line
-    sys.stdout.write(' ' * h_offset)
-    sys.stdout.write(f"{vertical}{' ' * (width-2)}{vertical}\n")
+    sys.stdout.write(f"\033[{v_padding+5};{h_offset}H")
+    sys.stdout.write(f"{vertical}{' ' * (width-2)}{vertical}")
     
     # Bottom of box
-    sys.stdout.write(' ' * h_offset)
-    sys.stdout.write(f"{bottom_left}{horizontal * (width-2)}{bottom_right}\n")
+    sys.stdout.write(f"\033[{v_padding+6};{h_offset}H")
+    sys.stdout.write(f"{bottom_left}{horizontal * (width-2)}{bottom_right}")
     
-    # Calculate exact cursor position for input field
-    cursor_x = h_offset + field_padding + 3 + 1  # +3 for margin and '[ '
-    cursor_y = 14+1  # 10 (v_padding) + 4 (lines to input field)
+    # Calculate cursor position for input field
+    cursor_x = h_offset + field_padding + 3  # +3 for margin and '[ '
+    cursor_y = v_padding + 4
     
-    # Position cursor exactly at first underscore
-    sys.stdout.write(f"\033[{cursor_y};{cursor_x}H")
+    # Position cursor and make it visible again
+    sys.stdout.write(f"\033[{cursor_y};{cursor_x}H\033[?25h")
+    sys.stdout.write('\033[0m')  # Reset attributes
     sys.stdout.flush()
     
     return (cursor_x, cursor_y)
@@ -259,18 +262,16 @@ def play_animation():
                 current_frame = 1
                 
             except KeyboardInterrupt:
-                # Clear screen for password prompt
-                sys.stdout.write('\033[2J\033[H')
-                sys.stdout.flush()
-                
-                # On Ctrl+C, verify password
+                # Don't clear screen, just show password prompt overlay
                 if verify_password():
                     sys.stdout.write(RESET)
                     sys.stdout.flush()
                     logging.info(f"Terminal lock ended by {pwd.getpwuid(os.getuid()).pw_name}")
-                    restore_terminal_state()  # Restore terminal state before exiting
+                    restore_terminal_state()
                     sys.exit(0)
                 
+                # If password verification fails, just continue animation
+                # The next frame will clear the password prompt
                 continue
                 
     except Exception as e:
