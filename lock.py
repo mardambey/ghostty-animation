@@ -119,7 +119,7 @@ def draw_password_prompt():
     cursor_x = h_offset + field_padding + 3  # +3 for margin and '[ '
     cursor_y = v_padding + 4
     
-    # Position cursor and make it visible again
+    # Position cursor and make it visible
     sys.stdout.write(f"\033[{cursor_y};{cursor_x}H\033[?25h")
     sys.stdout.write('\033[0m')  # Reset attributes
     sys.stdout.flush()
@@ -134,6 +134,7 @@ def get_hidden_input(prompt):
     while True:
         char = getch()
         if char == '\r' or char == '\n':  # Enter pressed
+            sys.stdout.write('\033[?25l')  # Hide cursor before returning
             return password
         elif char == '\x03':  # Ctrl+C
             raise KeyboardInterrupt
@@ -208,8 +209,8 @@ def render_frame(frame_content):
         frame = frame_content.replace('<span class="b">', BLUE + BOLD)
         frame = frame.replace('</span>', RESET + WHITE)
         
-        # Clear screen and move cursor to top
-        sys.stdout.write('\033[2J\033[H')
+        # Clear screen, move cursor to top, and hide cursor
+        sys.stdout.write('\033[2J\033[H\033[?25l')  # Added cursor hide
         sys.stdout.write(WHITE + frame)  # Start with white text
         sys.stdout.flush()
     except Exception as e:
@@ -217,13 +218,13 @@ def render_frame(frame_content):
         raise
 
 def save_terminal_state():
-    # Save cursor position and switch to alternate screen buffer
-    sys.stdout.write('\033[?1049h')  # Switch to alternate screen
+    # Save cursor position, switch to alternate screen buffer, and hide cursor
+    sys.stdout.write('\033[?1049h\033[?25l')  # Added cursor hide
     sys.stdout.flush()
 
 def restore_terminal_state():
-    # Restore main screen buffer and cursor position
-    sys.stdout.write('\033[?1049l')  # Restore main screen
+    # Restore main screen buffer and cursor position, show cursor
+    sys.stdout.write('\033[?25h\033[?1049l')  # Added cursor show
     sys.stdout.flush()
 
 def play_animation():
