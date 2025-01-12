@@ -134,6 +134,14 @@ def get_hidden_input(prompt):
             return password
         elif char == '\x03':  # Ctrl+C
             raise KeyboardInterrupt
+        elif char == '\x15':  # Ctrl+U - clear field
+            # Clear existing password
+            password = ''
+            field_pos = 0
+            # Redraw empty field
+            sys.stdout.write(f"\033[{cursor_y};{cursor_x}H")
+            sys.stdout.write('_' * 20)
+            sys.stdout.write(f"\033[{cursor_y};{cursor_x}H")
         elif char == '\x7f':  # Backspace
             if password:
                 password = password[:-1]
