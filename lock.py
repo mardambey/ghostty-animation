@@ -199,13 +199,23 @@ def render_frame(frame_content):
         logging.error(f"Frame rendering error: {str(e)}\n{traceback.format_exc()}")
         raise
 
+def save_terminal_state():
+    # Save cursor position and switch to alternate screen buffer
+    sys.stdout.write('\033[?1049h')  # Switch to alternate screen
+    sys.stdout.flush()
+
+def restore_terminal_state():
+    # Restore main screen buffer and cursor position
+    sys.stdout.write('\033[?1049l')  # Restore main screen
+    sys.stdout.flush()
+
 def play_animation():
     frame_rate = 1/24  # 24 fps
     current_frame = 1
     
     try:
-        # Install signal handler
-        #signal.signal(signal.SIGINT, sigint_handler)
+        # Save terminal state before starting
+        save_terminal_state()
         
         # Log start of session
         logging.info(f"Terminal lock started by {pwd.getpwuid(os.getuid()).pw_name}")
@@ -228,7 +238,6 @@ def play_animation():
                         logging.error(f"Error processing frame {frame_num}: {str(e)}\n{traceback.format_exc()}")
                         continue
                 
-                # Reset frame counter when we reach the end
                 current_frame = 1
                 
             except KeyboardInterrupt:
@@ -241,13 +250,14 @@ def play_animation():
                     sys.stdout.write(RESET)
                     sys.stdout.flush()
                     logging.info(f"Terminal lock ended by {pwd.getpwuid(os.getuid()).pw_name}")
+                    restore_terminal_state()  # Restore terminal state before exiting
                     sys.exit(0)
                 
-                # If password verification fails, continue animation from last frame
                 continue
                 
     except Exception as e:
         logging.critical(f"Critical animation error: {str(e)}\n{traceback.format_exc()}")
+        restore_terminal_state()  # Restore terminal state on error
         raise
 
 if __name__ == '__main__':
@@ -261,7 +271,8 @@ if __name__ == '__main__':
     except Exception as e:
         # Log the error with full traceback
         logging.critical(f"Fatal error: {str(e)}\n{traceback.format_exc()}")
-        # Reset colors on any error
+        # Reset colors and restore terminal state
         sys.stdout.write(RESET)
+        restore_terminal_state()
         sys.stdout.flush()
         raise e
